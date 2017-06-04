@@ -9,7 +9,7 @@ double get_time()
   return tv.tv_sec + tv.tv_usec * 1e-6;
 }
 
-double multiple(int n)
+double multiply(int n)
 {
   double* a = (double*)malloc(n * n * sizeof(double)); // Matrix A
   double* b = (double*)malloc(n * n * sizeof(double)); // Matrix B
@@ -74,13 +74,13 @@ int main(int argc, char** argv)
     return -1;
   }
   FILE *f;
-  f=fopen("multiplematrix.dat","w");
+  f=fopen("multiplymatrix.dat","w");
   int n = atoi(argv[1]);
   int i;
   int di;
   di=n/10;
   for(i=0;i<=n;i+=di){
-    fprintf(f,"%d\t%.6lf\n",i,multiple(i));
+    fprintf(f,"%d\t%.6lf\n",i,multiply(i));
   }
   fclose(f);
   return 0;
