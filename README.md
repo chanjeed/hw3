@@ -1,3 +1,3 @@
-# hw2
-# hw3
-# hw3
+# STEP CLASS3 Homework
+Make Calculator
+Using Shunting-yard algorithm
