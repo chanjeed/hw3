@@ -1,6 +1,35 @@
 #Use Shunting-yard algorithm to change to Postfix
 #Then calculate using Stack
 
+'''
+=========================
+Shunting-yard algorithm
+=========================
+while there are tokens to be read:
+	read a token.
+	if the token is a number, then push it to the output queue.
+	if the token is an operator, then:
+		while there is an operator at the top of the operator stack with
+			greater precedence:
+				pop operators from the operator stack, onto the output queue;
+		push the read operator onto the operator stack.
+	if the token is a left bracket (i.e. "("), then:
+		push it onto the operator stack.
+	if the token is a right bracket (i.e. ")"), then:
+		while the operator at the top of the operator stack is not a left bracket:
+			pop operators from the operator stack onto the output queue.
+		pop the left bracket from the stack.
+		/* if the stack runs out without finding a left bracket, then there are
+		mismatched parentheses. */
+if there are no more tokens to read:
+	while there are still operator tokens on the stack:
+		/* if the operator token on the top of the stack is a bracket, then
+		there are mismatched parentheses. */
+		pop the operator onto the output queue.
+exit.
+'''
+#Stack
+
 class Stack:
     def __init__(self):
         self.items = []
@@ -41,6 +70,23 @@ def checkParenthese(line):
     else:
         return 'FALSE'
 
+#Check if operands are correct
+#Check if there is no minus operand in front of parenthese with no number in front of it
+#ex. -(4.5*2.0) is not available, 0-(4.5*2.0) is available
+def checkValidOperand(line):
+    check=1
+    for index in range(len(line)):
+        if line[index]!='+' and line[index]!='-' and line[index]!='*' and line[index]!='/' and line[index]!='^' and line[index]!='(' and line[index]!=')' and line[index]!='.'  and  not line[index].isdigit():
+            check=0
+            break
+        elif line[index]=='-' and (not line[index-1].isdigit()) and (not line[index+1].isdigit()):
+            check=0
+            break            
+    if check==0:
+        return 'FALSE'
+    else:
+        return 'TRUE'
+
     
 # Make Number Token
 
@@ -49,6 +95,7 @@ def readNumber(line, index,is_minus):
     while index < len(line) and line[index].isdigit():
         number = number * 10 + int(line[index])
         index += 1
+    # '.' must be follow by number ex. 3.-5 not available
     if index < len(line) and line[index] == '.':
         index += 1
         keta = 0.1
@@ -106,13 +153,15 @@ def tokenize(line):
             minus='FALSE'
             (token, index) = readNumber(line, index,minus)
         elif line[index] == '+':
-            if (not line[index-1].isdigit() and line[index-1]!=')' and line[index+1].isdigit()) or index==0 : # plus sign in front of numberex. 3*+5
+            if (not line[index-1].isdigit() and line[index-1]!=')' and line[index+1].isdigit()) or index==0 :
+                # plus sign in front of number ex. 3*+5
                 minus='FALSE'
                 (token, index) = readNumber(line, index+1,minus)
             else:
                 (token, index) = readPlus(line, index)
         elif line[index] == '-':
-            if (not line[index-1].isdigit() and line[index-1]!=')' and line[index+1].isdigit()) or index==0 : # minus sign in front of number ex. 3*-2
+            if (not line[index-1].isdigit() and line[index-1]!=')' and line[index+1].isdigit()) or index==0 :
+                # minus sign in front of number ex. 3*-2
                 minus='TRUE'
                 (token, index) = readNumber(line, index+1,minus)
             else:
@@ -152,8 +201,9 @@ def OperationValue(op_type):
 # makePostfix when it is a operation
 
 def makeOperation(tokens,index,stack,output):
+   # print tokens[index]
     ThisOpValue=OperationValue(tokens[index]['type'])
-    while stack.size()!=0 :
+    while not stack.isEmpty() :
         if ThisOpValue<=OperationValue(stack.items[0]['type']) and ThisOpValue!=3:
             (stack,pop_to_output)=stack.pop()
             output.append(pop_to_output)
@@ -211,7 +261,7 @@ def calculate(first_num,second_num,op):
     elif op=='MINUS':
         calculate=first_num-second_num
     elif op=='DIVIDE':
-        calculate=float(first_num/second_num)
+        calculate=float(first_num)/second_num
     elif op=='MULTIPLY':
         calculate=first_num*second_num
     elif op=='POWER':
@@ -228,7 +278,10 @@ def evaluatePostfix(tokens):
             stack=stack.push(tokens[index])
         elif is_op(tokens[index]['type']):
             (stack, second_num)=stack.pop()
-            (stack, first_num)=stack.pop()
+            if stack.isEmpty():
+                first_num=0
+            else:
+                (stack, first_num)=stack.pop()
             token={'type': 'NUMBER','number': calculate(first_num['number'],second_num['number'],tokens[index]['type'])}
             stack=stack.push(token)
         else:
@@ -250,17 +303,35 @@ def test(line, expectedAnswer):
 # Add more tests to this function :)
 def runTest():
     print "==== Test started! ===="
+    test("1", 1)
     test("1+2", 3)
+    test("1.0+2.0", 3)
+    test("1.5687+2.91576", 4.48446)
     test("1.0+2.1-3", 0.1)
+    test("10-5/2.0*(4-2)",5)
+    test("3*2^2",12)
+    test("((5-4)*3/2-(5+2))",-5.5)
+    test("4.356-99.1234*-1",103.4794)
+    test("+5.4-6+(-4*2)",-8.6)
+    test("4^(3*2-5)",4)
+    test("4.0^(3.0*2.0-5.0)",4)
+    test("3.0+4*2-1/5",10.8)
+    test("((2+5))",7)
+    test("7/5/2/1.0",0.7)
+    test("-5*-2", 10)
+    test("0-(4.5*2.0)", -9)
     print "==== Test finished! ====\n"
 
 runTest()
 
 while True:
     print "######Calculator######## Available Operation (+,-,*,/,^)#############"
+    print "##############type ""exit"" to quit##################################"
     print 'Input> ',
     line = raw_input()
-    if checkParenthese(line)=='TRUE':
+    if line=="exit":
+        exit(1)
+    if checkParenthese(line)=='TRUE' and checkValidOperand(line)=='TRUE' :
         tokens = tokenize(line)
     #    print "tokenize"
     #    print tokens
@@ -270,4 +341,4 @@ while True:
         answer = evaluatePostfix(tokens)
         print "answer = %f\n" % answer
     else :
-        print "Parenthese is wrong >> Enter again"
+        print "Invalid syntax >> Enter again"
